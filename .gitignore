@@ -1,1 +1,39 @@
+# ==========================================
+# Visual Studio Hidden System Folders & Logs
+# ==========================================
 .vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ==========================================
+# Compiler Outputs (Build Directories)
+# ==========================================
+Debug/
+Release/
+x64/
+x86/
+[Dd]ebug/
+[Rr]elease/
+
+# ==========================================
+# Visual Studio Build & Intellisense Cache Files
+# ==========================================
+*.db
+*.opendb
+*.ipch
+*.aps
+*.ncb
+*.tlog
+*.idb
+*.pdb
+*.ilk
+*.obj
+*.exe
+
+# ==========================================
+# Specialized Graphics/OpenGL Cache Files
+# ==========================================
+*.log
+*.recipe
