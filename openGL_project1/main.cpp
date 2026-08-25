@@ -1,6 +1,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include "shaders.h"
+
 #include <iostream>
 #include <random>
 
@@ -13,37 +15,44 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 float vertices1[] = {
-	-0.5f,  0.0f, 0.0f,  // left 
-	 0.5f,  0.0f, 0.0f,  // right
-	-0.25f,  0.5f, 0.0f  // top left
+	// positions         // colors
+	 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  // bottom right
+	-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // bottom left
+	 0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f   // top 
 };
+
 float vertices2[] = {
-	-0.5f, -0.5f, 0.0f,  // bottom left
-	 0.0f, -0.5f, 0.0f,  // bottom middle
-	 0.5f, 0.5f, 0.0f   // bottom right
+	-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,  // bottom left
+	 0.0f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,  // bottom middle
+	 0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f   // bottom right
 };
 
 const char* vertexShaderSource = "#version 330 core\n"
 "layout (location = 0) in vec3 aPos;\n"
+"layout (location = 1) in vec3 aColor;\n"
+"out vec3 vertexColor;\n"
 "void main()\n"
 "{\n"
-"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"   gl_Position = vec4(aPos, 1.0);\n"
+"   vertexColor = aColor;\n"
 "}\0";
 
 const char* fragmentShaderSource = "#version 330 core\n"
 "out vec4 FragColor;\n"
+"in vec3 vertexColor;\n"
 "\n"
 "void main()\n"
 "{\n"
-"	FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+"	FragColor = vec4(vertexColor, 1.0);\n"
 "}\0";
 
 const char* fragmentShaderBlue = "#version 330 core\n"
 "out vec4 FragColor;\n"
 "\n"
+"uniform vec4 ourColor;\n"
 "void main()\n"
 "{\n"
-"	FragColor = vec4(0.2f, 0.5f, 1.0f, 1.0f);\n"
+"	FragColor = ourColor;\n"
 "}\0";
 
 int main()
@@ -141,10 +150,13 @@ int main()
 
 	// 2.5. copy our index array in a element buffer for OpenGL to use
 	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
 	// 3. then set our vertex attributes pointers
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+	//color attribute
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3* sizeof(float)));
+	glEnableVertexAttribArray(1);
 
 	//round 2
 	glBindVertexArray(VAOS[1]);
@@ -152,13 +164,17 @@ int main()
 	glBindBuffer(GL_ARRAY_BUFFER, VBOS[1]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
 
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 
 
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+	glUseProgram(shaderProgram);
 
 	//callback functions. (whats a callback function?)
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -196,7 +212,14 @@ void processInput(GLFWwindow* window, unsigned int shaderProgramBlue)
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 	if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
+	{
+		float timeValue = glfwGetTime();
+		float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
+		int vertexColorLocation = glGetUniformLocation(shaderProgramBlue, "ourColor");
 		glUseProgram(shaderProgramBlue);
+		glUniform4f(vertexColorLocation, greenValue/2, greenValue, 0.0f, 1.0f);
+		glUseProgram(shaderProgramBlue);
+	}
 }
 
 int randombitch()
