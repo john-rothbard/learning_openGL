@@ -7,8 +7,7 @@
 #include <random>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow* window, unsigned int shaderProgramBlue);
-int randombitch();
+void processInput(GLFWwindow* window);
 
 //constants (duh)
 const unsigned int SCR_WIDTH = 800;
@@ -17,43 +16,15 @@ const unsigned int SCR_HEIGHT = 600;
 float vertices1[] = {
 	// positions         // colors
 	 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  // bottom right
-	-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // bottom left
+	-0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,  // bottom left
 	 0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f   // top 
 };
 
 float vertices2[] = {
-	-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,  // bottom left
-	 0.0f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,  // bottom middle
-	 0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f   // bottom right
+	0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f,  // bottom left
+	 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,  // bottom middle
+	 1.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f   // bottom right
 };
-
-const char* vertexShaderSource = "#version 330 core\n"
-"layout (location = 0) in vec3 aPos;\n"
-"layout (location = 1) in vec3 aColor;\n"
-"out vec3 vertexColor;\n"
-"void main()\n"
-"{\n"
-"   gl_Position = vec4(aPos, 1.0);\n"
-"   vertexColor = aColor;\n"
-"}\0";
-
-const char* fragmentShaderSource = "#version 330 core\n"
-"out vec4 FragColor;\n"
-"in vec3 vertexColor;\n"
-"\n"
-"void main()\n"
-"{\n"
-"	FragColor = vec4(vertexColor, 1.0);\n"
-"}\0";
-
-const char* fragmentShaderBlue = "#version 330 core\n"
-"out vec4 FragColor;\n"
-"\n"
-"uniform vec4 ourColor;\n"
-"void main()\n"
-"{\n"
-"	FragColor = ourColor;\n"
-"}\0";
 
 int main()
 {
@@ -91,47 +62,7 @@ int main()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices1), vertices1, GL_STATIC_DRAW);
 	//glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
 
-	//setting up vertex shader
-	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-
-	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-	glCompileShader(vertexShader);
-
-	//setting up fragment shader 1
-	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-	glCompileShader(fragmentShader);
-
-
-	//shader program (linking shaders)
-	unsigned int shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
-
-	//setting up shader 3 (fragment shader blue)
-	unsigned int fragmentShader2 = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader2, 1, &fragmentShaderBlue, NULL);
-	glCompileShader(fragmentShader2);
-
-	//shader program 2
-	unsigned int shaderProgramBlue = glCreateProgram();
-	glAttachShader(shaderProgramBlue, vertexShader);
-	glAttachShader(shaderProgramBlue, fragmentShader2);
-	glLinkProgram(shaderProgramBlue);
-
-
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
-	glDeleteShader(fragmentShader2);
-
-	glUseProgram(shaderProgram);
-
-	//delete shaders after linking them to the program
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
-
-	//HERE (LINKING VERTEX ATTRIBUTES)
+	Shader ourShader("shader.vs", "shader.fs");
 
 	//vao shit
 	glGenVertexArrays(2, VAOS);
@@ -174,7 +105,8 @@ int main()
 
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	glUseProgram(shaderProgram);
+	ourShader.use();
+	ourShader.setFloat("offset", 0.5f);
 
 	//callback functions. (whats a callback function?)
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -182,7 +114,7 @@ int main()
 	while (!glfwWindowShouldClose(window))
 	{
 		//inputs
-		processInput(window, shaderProgramBlue);
+		processInput(window);
 
 		//rendering 
 		glClearColor(0.9f, 0.1f, 0.4f, 1.0f);
@@ -207,32 +139,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow* window, unsigned int shaderProgramBlue)
+void processInput(GLFWwindow* window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
-	if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
-	{
-		float timeValue = glfwGetTime();
-		float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
-		int vertexColorLocation = glGetUniformLocation(shaderProgramBlue, "ourColor");
-		glUseProgram(shaderProgramBlue);
-		glUniform4f(vertexColorLocation, greenValue/2, greenValue, 0.0f, 1.0f);
-		glUseProgram(shaderProgramBlue);
-	}
-}
-
-int randombitch()
-{
-	// 1. Obtain a random seed from the hardware
-	std::random_device rd;
-
-	// 2. Initialize the standard Mersenne Twister engine with the seed
-	std::mt19937 gen(rd());
-
-	// 3. Define the distribution range [inclusive, inclusive]
-	std::uniform_int_distribution distrib(0, 1);
-	// 4. Generate the random number
-
-	return distrib(gen);
 }
